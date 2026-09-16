@@ -120,38 +120,117 @@ function HomeScreen({ navigation }) {
   );
 }
 
-function DetailScreen({ route, navigation }) {
+function DetailScreen({ route, navigation, agregarAlCarrito }) {
+  const { producto, cantidad } = route.params;
 
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{producto.nombre}</Text>
+
+      <Text style={styles.detail}>
+        {producto.detalle_del_producto}
+      </Text>
+
+      <Text style={styles.price}>
+        ${producto.precio.toLocaleString('es-AR')}
+      </Text>
+
+      <Text style={styles.detail}>
+        Cantidad ingresada: {cantidad}
+      </Text>
+
+      <Button
+        title="Comprar"
+        onPress={() => {
+          agregarAlCarrito(producto, cantidad);
+          navigation.navigate('Order', {
+            producto: producto,
+            cantidad: cantidad
+          });
+        }}
+      />
+    </View>
+  );
 }
+  
 
-function OrderScreen(navigation) {
-  const total = cantidad * item.precio;
+function OrderScreen({ carrito }) {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Mi carrito de compras</Text>
 
-  Alert.alert(
-    'Compra realizada',
-    `Producto: ${item.nombre}\nCantidad: ${cantidad}\nTotal: $${total.toLocaleString('es-AR')}`
+      {carrito.length === 0 ? (
+        <Text style={styles.detail}>
+          No hay productos en el carrito.
+        </Text>
+      ) : (
+        carrito.map((item, index) => (
+          <View key={index}>
+            <Text style={styles.detail}>
+              Producto: {item.producto.nombre}
+            </Text>
+
+            <Text style={styles.detail}>
+              Cantidad: {item.cantidad}
+            </Text>
+
+            <Text style={styles.price}>
+              Total: ${(item.producto.precio * item.cantidad).toLocaleString('es-AR')}
+            </Text>
+          </View>
+        ))
+      )}
+    </View>
   );
 }
 
 export default function App() {
+  const [carrito, setCarrito] = useState([]);
+
+  const agregarAlCarrito = (producto, cantidad) => {
+    setCarrito((carritoActual) => [
+      ...carritoActual,
+      {
+        producto: producto,
+        cantidad: cantidad,
+      },
+    ]);
+  };
+
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
-        <Stack.Screen 
-          name="Home" 
-          component={HomeScreen} 
-          options={{ title: 'E-Commerce TechMarket' }} 
+
+        <Stack.Screen
+          name="Home"
+          children={(props) => (
+            <HomeScreen {...props} />
+          )}
+          options={{ title: 'E-Commerce TechMarket' }}
         />
-        <Stack.Screen 
-          name="Detail" 
-          component={DetailScreen} 
-          options={{ title: 'Detalle del Producto' }} 
+
+        <Stack.Screen
+          name="Detail"
+          children={(props) => (
+            <DetailScreen
+              {...props}
+              agregarAlCarrito={agregarAlCarrito}
+            />
+          )}
+          options={{ title: 'Detalle del Producto' }}
         />
-        <Stack.Screen 
-          name="Order" 
-          component={OrderScreen} 
-          options={{ title: 'Mi carrito de compras' }} 
-          />
+
+        <Stack.Screen
+          name="Order"
+          children={(props) => (
+            <OrderScreen
+              {...props}
+              carrito={carrito}
+            />
+          )}
+          options={{ title: 'Mi carrito de compras' }}
+        />
+
       </Stack.Navigator>
     </NavigationContainer>
   );
