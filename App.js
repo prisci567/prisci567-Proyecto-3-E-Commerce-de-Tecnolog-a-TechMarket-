@@ -1,14 +1,9 @@
+import React, {useState} from 'react';
+import { View, Text, Button, StyleSheet, TouchableOpacity, FlatList, Alert, TextInput } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import React, { useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  FlatList,
-  Button,
-  Alert,
-  TextInput
-} from 'react-native';
+const Stack = createNativeStackNavigator();
 
 const PRODUCTOS = [
   {
@@ -45,7 +40,7 @@ const PRODUCTOS = [
   }
 ];
 
-export default function App() {
+function HomeScreen({ navigation }) {
   const [cantidades, setCantidades] = useState({});
 
   const cambiarCantidad = (id, cantidad) => {
@@ -53,30 +48,6 @@ export default function App() {
       ...cantidades,
       [id]: cantidad
     });
-  };
-
-  const comprarProducto = (item) => {
-    const cantidad = Number(cantidades[item.id]) || 0;
-
-    if (cantidad <= 0) {
-      Alert.alert('Cantidad incorrecta', 'Ingresá una cantidad mayor a 0.');
-      return;
-    }
-
-    if (cantidad > item.stock) {
-      Alert.alert(
-        'Stock insuficiente',
-        `No hay suficiente stock de ${item.nombre}. Actualmente hay ${item.stock} unidades disponibles.`
-      );
-      return;
-    }
-
-    const total = cantidad * item.precio;
-
-    Alert.alert(
-      'Compra realizada',
-      `Producto: ${item.nombre}\nCantidad: ${cantidad}\nTotal: $${total.toLocaleString('es-AR')}`
-    );
   };
 
   const renderItem = ({ item }) => (
@@ -108,8 +79,10 @@ export default function App() {
 
         <Button
           title="Comprar"
-          onPress={() => comprarProducto(item)}
+          onPress={() => navigation.navigate(
+            'Detail', { producto:item })}
         />
+        
       </View>
     </View>
   );
@@ -128,7 +101,58 @@ export default function App() {
   );
 }
 
+function DetailScreen({ route, navigation }) {
+  const { producto } = route.params;
+
+  return (
+    <View style={styles.center}>
+      <Text style={styles.title}>Detalle del Curso</Text>
+      <Text style={styles.detailText}>Nombre: {curso}</Text>
+      <Text style={styles.detailText}>Nivel: {nivel}</Text>
+      <Button title="Volver Atrás" onPress={() => navigation.goBack()} />
+    </View>
+  );
+}
+
+function OrderScreen(navigation) {
+
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home">
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{ title: 'E-Commerce TechMarket' }} 
+        />
+        <Stack.Screen 
+          name="Detail" 
+          component={DetailScreen} 
+          options={{ title: 'Detalle del Producto' }} 
+        />
+        <Stack.Screen 
+          name="Order" 
+          component={OrderScreen} 
+          options={{ title: 'Mi carrito de compras' }} 
+          />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
 const styles = StyleSheet.create({
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  detailText: {
+    fontSize: 18,
+    marginBottom: 10,
+  },
   container: {
     flex: 1,
     backgroundColor: '#eef2f5',
