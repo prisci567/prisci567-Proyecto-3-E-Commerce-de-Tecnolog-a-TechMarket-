@@ -43,12 +43,37 @@ const PRODUCTOS = [
 
 function HomeScreen({ navigation }) {
   const [cantidades, setCantidades] = useState({});
+  const [carrito, setCarrito] = useState(route.params?.carrito || []);
 
   const cambiarCantidad = (id, cantidad) => {
     setCantidades({
       ...cantidades,
       [id]: cantidad
     });
+  };
+
+    const comprarProducto = (item) => {
+      const cantidad = Number(cantidades[item.id]) || 0;
+  
+      if (cantidad <= 0) {
+        Alert.alert('Cantidad incorrecta', 'Ingresá una cantidad mayor a 0.');
+        return;
+      }
+  
+      if (cantidad > item.stock) {
+        Alert.alert(
+          'Stock insuficiente',
+          `No hay suficiente stock de ${item.nombre}. Actualmente hay ${item.stock} unidades disponibles.`
+        );
+        return;
+      }
+  
+      navigation.navigate('Detail', {
+        producto: item,
+        cantidad: cantidades[item.id],
+        carrito: carrito,
+        actualizarCarrito: setCarrito
+      });
   };
 
   const renderItem = ({ item }) => (
@@ -80,27 +105,7 @@ function HomeScreen({ navigation }) {
       
         <Button
           title="Comprar"
-          onPress={() => {
-            const cantidad = Number(cantidades[item.id]) || 0;
-
-            if (cantidad <= 0) {
-              Alert.alert('Cantidad incorrecta', 'Ingresá una cantidad mayor a 0.');
-              return;
-            }
-
-            if (cantidad > item.stock) {
-              Alert.alert(
-                'Stock insuficiente',
-                `No hay suficiente stock de ${item.nombre}. Actualmente hay ${item.stock} unidades disponibles.`
-              );
-              return;
-            }
-            navigation.navigate(
-            'Detail', { 
-                  producto: item,
-                  cantidad: cantidades[item.id]
-             });
-          }}
+          onPress={() => comprarProducto(item)}
         />
         
       </View>
@@ -121,8 +126,8 @@ function HomeScreen({ navigation }) {
   );
 }
 
-function DetailScreen({ route, navigation, agregarAlCarrito }) {
-  const { producto, cantidad } = route.params;
+function DetailScreen({ route, navigation }) {
+  const { producto, cantidad, carrito, actualizarCarrito } = route.params;
 
   return (
     <View style={styles.container}>
@@ -141,12 +146,13 @@ function DetailScreen({ route, navigation, agregarAlCarrito }) {
       </Text>
 
       <Button
-        title="Comprar"
+        title="Confirmar Compra"
         onPress={() => {
-          agregarAlCarrito(producto, cantidad);
           navigation.navigate('Order', {
             producto: producto,
-            cantidad: cantidad
+            cantidad: cantidad,
+            carrito: carrito,
+            actualizarCarrito: actualizarCarrito
           });
         }}
       />
