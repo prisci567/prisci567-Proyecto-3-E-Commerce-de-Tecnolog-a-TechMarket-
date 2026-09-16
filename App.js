@@ -76,11 +76,30 @@ function HomeScreen({ navigation }) {
             cambiarCantidad(item.id, texto)
           }
         />
-
+      
         <Button
           title="Comprar"
-          onPress={() => navigation.navigate(
-            'Detail', { producto:item })}
+          onPress={() => {
+            const cantidad = Number(cantidades[item.id]) || 0;
+
+            if (cantidad <= 0) {
+              Alert.alert('Cantidad incorrecta', 'Ingresá una cantidad mayor a 0.');
+              return;
+            }
+
+            if (cantidad > item.stock) {
+              Alert.alert(
+                'Stock insuficiente',
+                `No hay suficiente stock de ${item.nombre}. Actualmente hay ${item.stock} unidades disponibles.`
+              );
+              return;
+            }
+            navigation.navigate(
+            'Detail', { 
+                  producto: item,
+                  cantidad: cantidades[item.id]
+             });
+          }}
         />
         
       </View>
@@ -102,20 +121,16 @@ function HomeScreen({ navigation }) {
 }
 
 function DetailScreen({ route, navigation }) {
-  const { producto } = route.params;
 
-  return (
-    <View style={styles.center}>
-      <Text style={styles.title}>Detalle del Curso</Text>
-      <Text style={styles.detailText}>Nombre: {curso}</Text>
-      <Text style={styles.detailText}>Nivel: {nivel}</Text>
-      <Button title="Volver Atrás" onPress={() => navigation.goBack()} />
-    </View>
-  );
 }
 
 function OrderScreen(navigation) {
+  const total = cantidad * item.precio;
 
+  Alert.alert(
+    'Compra realizada',
+    `Producto: ${item.nombre}\nCantidad: ${cantidad}\nTotal: $${total.toLocaleString('es-AR')}`
+  );
 }
 
 export default function App() {
@@ -144,7 +159,7 @@ export default function App() {
 
 const styles = StyleSheet.create({
   center: {
-    flex: 1,
+    flex: 0.9,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
@@ -152,13 +167,14 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 18,
     marginBottom: 10,
+    marginTop: 10,
+    textAlign: 'center',
   },
   container: {
     flex: 1,
     backgroundColor: '#eef2f5',
     paddingTop: 50,
   },
-
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
