@@ -41,7 +41,7 @@ const PRODUCTOS = [
   }
 ];
 
-function HomeScreen({ navigation }) {
+function HomeScreen({ navigation, route }) {
   const [cantidades, setCantidades] = useState({});
   const [carrito, setCarrito] = useState(route.params?.carrito || []);
 
@@ -161,7 +161,7 @@ function DetailScreen({ route, navigation }) {
 }
   
 
-function OrderScreen({ carrito }) {
+function OrderScreen({ route, navigation }) {
   const { producto, cantidad, actualizarCarrito } = route.params;
 
   const [carritoActual, setCarritoActual] = useState(() => {
