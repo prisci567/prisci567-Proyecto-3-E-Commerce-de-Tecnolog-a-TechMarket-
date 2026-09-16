@@ -2,6 +2,7 @@ import React, {useState} from 'react';
 import { View, Text, Button, StyleSheet, TouchableOpacity, FlatList, Alert, TextInput } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
 const Stack = createNativeStackNavigator();
 
@@ -155,100 +156,133 @@ function DetailScreen({ route, navigation, agregarAlCarrito }) {
   
 
 function OrderScreen({ carrito }) {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mi carrito de compras</Text>
+  const { producto, cantidad, actualizarCarrito } = route.params;
 
-      {carrito.length === 0 ? (
+  const [carritoActual, setCarritoActual] = useState(() => {
+    const nuevoCarrito = [
+      ...route.params.carrito,
+      { ...producto, cantidad: Number(cantidad) }
+    ];
+    actualizarCarrito(nuevoCarrito); 
+    return nuevoCarrito;
+  });
+
+  const quitarDelCarrito = (id) => {
+    const nuevoCarrito = carritoActual.filter((item) => item.id !== id);
+    actualizarCarrito(nuevoCarrito);
+    setCarritoActual(nuevoCarrito);
+  };
+
+  const agruparCarrito = (listaCarrito) => {
+    const agrupado = [];
+
+    listaCarrito.forEach((item) => {
+      const existente = agrupado.find((p) => p.id === item.id);
+
+      if (existente) {
+        existente.cantidad += item.cantidad;
+      } else {
+        agrupado.push({ ...item });
+      }
+    });
+
+    return agrupado;
+  };
+
+  const carritoAgrupado = agruparCarrito(carritoActual);
+
+  const total = carritoAgrupado.reduce(
+    (acumulado, item) => acumulado + item.precio * item.cantidad, 0 );
+
+  const renderItem = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardContent}>
+        <Text style={styles.title}>{item.nombre}</Text>
         <Text style={styles.detail}>
-          No hay productos en el carrito.
+          {item.cantidad} x ${item.precio.toLocaleString('es-AR')}
         </Text>
-      ) : (
-        carrito.map((item, index) => (
-          <View key={index}>
-            <Text style={styles.detail}>
-              Producto: {item.producto.nombre}
-            </Text>
-
-            <Text style={styles.detail}>
-              Cantidad: {item.cantidad}
-            </Text>
-
-            <Text style={styles.price}>
-              Total: ${(item.producto.precio * item.cantidad).toLocaleString('es-AR')}
-            </Text>
-          </View>
-        ))
-      )}
+        <Text style={styles.price}>
+          Subtotal: ${(item.cantidad * item.precio).toLocaleString('es-AR')}
+        </Text>
+        <TouchableOpacity onPress={() => quitarDelCarrito(item.id)}>
+          <Text style={styles.removeLink}>Quitar</Text>
+        </TouchableOpacity>
+      </View>
     </View>
+  );
+
+  if (carritoAgrupado.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.headerTitle}>Tu carrito está vacío</Text>
+        <Button title="Volver a la tienda" onPress={() => navigation.popToTop()} />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.headerTitle}>Resumen de tu compra</Text>
+
+      <FlatList
+        data={carritoAgrupado}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listPadding}
+      />
+
+      <View style={styles.totalBox}>
+        <Text style={styles.totalText}>Total: ${total.toLocaleString('es-AR')}</Text>
+      </View>
+
+      <View style={styles.buttonSpacing}>
+        <Button
+          title="Finalizar compra"
+          onPress={() => {
+            Alert.alert(
+              'Próximamente',
+              'La pasarela de pago todavía no está implementada.'
+            );
+          }}
+        />
+      </View>
+
+      <View style={styles.buttonSpacing}>
+        <Button
+          title="Seguir comprando"
+          onPress={() => navigation.navigate('Home', { carrito: carritoActual })}
+          color="#888"
+        />
+      </View>
+    </SafeAreaView>
   );
 }
 
 export default function App() {
-  const [carrito, setCarrito] = useState([]);
-
-  const agregarAlCarrito = (producto, cantidad) => {
-    setCarrito((carritoActual) => [
-      ...carritoActual,
-      {
-        producto: producto,
-        cantidad: cantidad,
-      },
-    ]);
-  };
-
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
-
-        <Stack.Screen
-          name="Home"
-          children={(props) => (
-            <HomeScreen {...props} />
-          )}
-          options={{ title: 'E-Commerce TechMarket' }}
+        <Stack.Screen 
+          name="Home" 
+          component={HomeScreen} 
+          options={{ title: 'E-Commerce TechMarket' }} 
         />
-
-        <Stack.Screen
-          name="Detail"
-          children={(props) => (
-            <DetailScreen
-              {...props}
-              agregarAlCarrito={agregarAlCarrito}
-            />
-          )}
-          options={{ title: 'Detalle del Producto' }}
+        <Stack.Screen 
+          name="Detail" 
+          component={DetailScreen} 
+          options={{ title: 'Detalle del Producto' }} 
         />
-
-        <Stack.Screen
-          name="Order"
-          children={(props) => (
-            <OrderScreen
-              {...props}
-              carrito={carrito}
-            />
-          )}
-          options={{ title: 'Mi carrito de compras' }}
-        />
-
+        <Stack.Screen 
+          name="Order" 
+          component={OrderScreen} 
+          options={{ title: 'Mi carrito de compras' }} 
+          />
       </Stack.Navigator>
     </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 0.9,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  detailText: {
-    fontSize: 18,
-    marginBottom: 10,
-    marginTop: 10,
-    textAlign: 'center',
-  },
   container: {
     flex: 1,
     backgroundColor: '#eef2f5',
@@ -308,5 +342,26 @@ const styles = StyleSheet.create({
     padding: 8,
     marginTop: 10,
     marginBottom: 10,
+  },
+
+  totalBox: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    alignItems: 'center',
+  },
+  totalText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2b8a3e',
+  },
+  buttonSpacing: {
+    marginBottom: 10,
+  },
+  removeLink: {
+    color: '#c0392b',
+    marginTop: 10,
+    fontWeight: 'bold',
   },
 });
